@@ -1,0 +1,59 @@
+rule:
+  name: "Snatch Ransomware Detection"
+  description: "Detects Snatch ransomware activity, including Safe Mode boot enforcement, shadow copy deletion, and service termination."
+  platform: "windows"
+  condition: "process_creation"
+  indicators:
+    - field: "ProcessImagePath"
+      contains:
+        - "\\cmd.exe"
+        - "\\powershell.exe"
+        - "\\bcdedit.exe"
+        - "\\vssadmin.exe"
+        - "\\wmic.exe"
+        - "\\schtasks.exe"
+        - "\\net.exe"
+        - "\\rundll32.exe"
+    - field: "ProcessCommandLine"
+      contains:
+        - "bcdedit /set safeboot minimal"
+        - "vssadmin delete shadows"
+        - "wmic shadowcopy delete"
+        - "schtasks create"
+        - "net stop"
+        - "cryptbase.dll"
+  response:
+    action: "alert"
+    severity: "critical"
+    tags:
+      - "ransomware"
+      - "snatch"
+      - "shadow_copy_deletion"
+      - "safe_mode"
+      - "service_termination"
+  metadata:
+    author: "Security Team"
+    created: "2025-02-25"
+    category: "Threat Detection"
+    mitre_attack:
+      - T1490  # Inhibit System Recovery
+      - T1070  # Indicator Removal
+      - T1543  # Create or Modify System Process
+      - T1562  # Impair Defenses
+
+---
+
+SELECT event_time, agent_uuid, agent_name, event_type, process_name, process_cmd, process_user, parent_process_name
+FROM data
+WHERE event_type = "PROCESS"
+AND (
+    process_name ILIKE "%cmd.exe%" AND process_cmd ILIKE "%bcdedit /set safeboot minimal%"
+    OR process_name ILIKE "%vssadmin.exe%" AND process_cmd ILIKE "%delete shadows%"
+    OR process_name ILIKE "%wmic.exe%" AND process_cmd ILIKE "%shadowcopy delete%"
+    OR process_name ILIKE "%schtasks.exe%" AND process_cmd ILIKE "%create%"
+    OR process_name ILIKE "%net.exe%" AND process_cmd ILIKE "%stop%"
+    OR process_name ILIKE "%rundll32.exe%" AND process_cmd ILIKE "%cryptbase.dll%"
+    OR process_name ILIKE "%powershell.exe%" AND process_cmd ILIKE "%bypass%"
+)
+
+---
