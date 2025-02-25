@@ -1,0 +1,56 @@
+rule:
+  name: "Suspicious Microsoft Office Child Process"
+  description: "Detects suspicious child processes spawned by Microsoft Office applications, which may indicate macro-based attacks or malicious document exploitation."
+  platform: "windows"
+  condition: "process_creation"
+  indicators:
+    - field: "ParentProcessImagePath"
+      contains:
+        - "\\winword.exe"
+        - "\\excel.exe"
+        - "\\powerpnt.exe"
+        - "\\msaccess.exe"
+        - "\\outlook.exe"
+    - field: "ProcessImagePath"
+      contains:
+        - "\\cmd.exe"
+        - "\\powershell.exe"
+        - "\\wscript.exe"
+        - "\\cscript.exe"
+        - "\\mshta.exe"
+  response:
+    action: "alert"
+    severity: "high"
+    tags:
+      - "malicious_macro"
+      - "office_exploit"
+      - "malware_execution"
+      - "phishing"
+  metadata:
+    author: "Security Team"
+    created: "2025-02-25"
+    category: "Threat Detection"
+    mitre_attack:
+      - T1204.002  # User Execution: Malicious File
+      - T1566.001  # Spearphishing Attachment
+      - T1059.003  # Command and Scripting Interpreter: Windows Command Shell
+      - T1059.001  # Command and Scripting Interpreter: PowerShell
+      - T1218.005  # System Binary Proxy Execution: Mshta
+
+---
+
+SELECT event_time AND agent_uuid AND agent_name AND event_type AND parent_process_name AND process_name AND process_cmd AND process_user
+FROM data 
+WHERE event_type = "PROCESS" 
+AND parent_process_name ILIKE "%winword.exe%" 
+OR parent_process_name ILIKE "%excel.exe%" 
+OR parent_process_name ILIKE "%powerpnt.exe%" 
+OR parent_process_name ILIKE "%msaccess.exe%" 
+OR parent_process_name ILIKE "%outlook.exe%" 
+AND process_name ILIKE "%cmd.exe%" 
+OR process_name ILIKE "%powershell.exe%" 
+OR process_name ILIKE "%wscript.exe%" 
+OR process_name ILIKE "%cscript.exe%" 
+OR process_name ILIKE "%mshta.exe%"
+
+---
