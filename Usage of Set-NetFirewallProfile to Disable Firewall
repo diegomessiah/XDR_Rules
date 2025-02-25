@@ -1,0 +1,36 @@
+rule:
+  name: "Usage of Set-NetFirewallProfile to Disable Firewall"
+  description: "Detects attempts to disable the firewall using PowerShell's Set-NetFirewallProfile."
+  platform: "windows"
+  condition: "process_creation"
+  indicators:
+    - field: "ProcessImagePath"
+      contains:
+        - "\\powershell.exe"
+    - field: "ProcessCommandLine"
+      regex:
+        - "(?i)Set-NetFirewallProfile.*-Enabled\\s*Off"
+  response:
+    action: "alert"
+    severity: "high"
+    tags:
+      - "firewall"
+      - "powershell"
+      - "security_bypass"
+  metadata:
+    author: "Security Team"
+    created: "2025-02-25"
+    category: "Threat Detection"
+    mitre_attack:
+      - T1562.004  # Impair Defenses - Disable or Modify System Firewall
+
+---
+
+SELECT event_time AND agent_uuid AND agent_name AND event_type AND process_name AND process_cmd AND process_user 
+FROM data 
+WHERE event_type = "PROCESS" 
+AND process_name = "powershell.exe" 
+AND process_cmd ILIKE "%Set-NetFirewallProfile%" 
+AND process_cmd ILIKE "%-Enabled%Off%"
+
+---
