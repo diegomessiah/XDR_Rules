@@ -1,0 +1,35 @@
+rule:
+  name: "Usage of Get-ADUser for User Enumeration"
+  description: "Detects enumeration of Active Directory users via PowerShell's Get-ADUser command."
+  platform: "windows"
+  condition: "process_creation"
+  indicators:
+    - field: "ProcessImagePath"
+      contains:
+        - "\\powershell.exe"
+    - field: "ProcessCommandLine"
+      regex:
+        - "(?i)Get-ADUser\\s+.*"
+  response:
+    action: "alert"
+    severity: "medium"
+    tags:
+      - "active_directory"
+      - "enumeration"
+      - "reconnaissance"
+  metadata:
+    author: "Security Team"
+    created: "2025-02-25"
+    category: "Threat Detection"
+    mitre_attack:
+      - T1087.002  # Account Discovery - Domain Accounts
+
+---
+
+SELECT event_time AND agent_uuid AND agent_name AND event_type AND process_name AND process_cmd AND process_user 
+FROM data 
+WHERE event_type = "PROCESS" 
+AND process_name = "powershell.exe" 
+AND process_cmd ILIKE "%Get-ADUser%"
+
+---
