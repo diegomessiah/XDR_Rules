@@ -1,0 +1,35 @@
+rule:
+  name: "Wbadmin Delete System state backup Detection"
+  description: "Detects the use of wbadmin to delete system state backups, which may indicate malicious activity or data destruction."
+  platform: "windows"
+  condition: "process_creation"
+  indicators:
+    - field: "ProcessImagePath"
+      contains:
+        - "\\wbadmin.exe"
+    - field: "ProcessCommandLine"
+      regex:
+        - "(?i)wbadmin\\s+delete\\s+systemstatebackup.*"
+  response:
+    action: "alert"
+    severity: "high"
+    tags:
+      - "backup_deletion"
+      - "data_destruction"
+      - "incident_response"
+  metadata:
+    author: "Security Team"
+    created: "2025-02-25"
+    category: "Threat Detection"
+    mitre_attack:
+      - T1490  # Inhibit System Recovery
+
+---
+
+SELECT event_time agent_uuid agent_name event_type process_name process_cmd process_user 
+FROM data 
+WHERE event_type = "PROCESS" 
+AND process_name = "wbadmin.exe" 
+AND process_cmd ILIKE "%delete systemstatebackup%"
+
+---
