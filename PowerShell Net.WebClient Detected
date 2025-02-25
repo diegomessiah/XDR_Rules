@@ -1,0 +1,45 @@
+rule:
+  name: "PowerShell Net.WebClient Detected"
+  description: "Detects PowerShell usage of Net.WebClient, which is often used for downloading malicious payloads."
+  platform: "windows"
+  condition: "process_creation"
+  indicators:
+    - field: "ProcessImagePath"
+      contains:
+        - "\\powershell.exe"
+    - field: "ProcessCommandLine"
+      regex:
+        - "(?i)New-Object\\s+System.Net.WebClient"
+        - "(?i)Net.WebClient\\s*\\("
+        - "(?i)DownloadString\\s*\\("
+        - "(?i)DownloadFile\\s*\\("
+  response:
+    action: "alert"
+    severity: "high"
+    tags:
+      - "powershell"
+      - "webclient"
+      - "download"
+      - "malware"
+  metadata:
+    author: "Security Team"
+    created: "2025-02-25"
+    category: "Threat Detection"
+    mitre_attack:
+      - T1105  # Ingress Tool Transfer
+      - T1059.001  # PowerShell Execution
+
+---
+
+SELECT event_time AND agent_uuid AND agent_name AND event_type AND process_name AND process_cmd AND process_user AND parent_process_name
+FROM data
+WHERE event_type = "PROCESS"
+AND process_name ILIKE "powershell.exe"
+AND (
+    process_cmd ILIKE "Net.WebClient"
+    OR process_cmd ILIKE "System.Net.WebClient"
+    OR process_cmd ILIKE "DownloadString"
+    OR process_cmd ILIKE "DownloadFile"
+)
+
+---
