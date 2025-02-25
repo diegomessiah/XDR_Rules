@@ -1,0 +1,47 @@
+rule:
+  name: "PowerShell String Concatenation Bypass in Function Call"
+  description: "Detects PowerShell execution using string concatenation techniques to evade detection."
+  platform: "windows"
+  condition: "process_creation"
+  indicators:
+    - field: "ProcessImagePath"
+      contains:
+        - "\\powershell.exe"
+    - field: "ProcessCommandLine"
+      regex:
+        - "(?i)IEX\\s*\\(.*\\+.*\\)"
+        - "(?i)Invoke-Expression\\s*\\(.*\\+.*\\)"
+        - "(?i)\\[System\\.Text\\.Encoding\\]::.*\\+.*"
+        - "(?i)\\[Convert\\]::.*\\+.*"
+        - "(?i)\\([char\\].*\\+.*\\)"
+  response:
+    action: "alert"
+    severity: "high"
+    tags:
+      - "powershell"
+      - "obfuscation"
+      - "bypass"
+      - "invoke-expression"
+  metadata:
+    author: "Security Team"
+    created: "2025-02-25"
+    category: "Threat Detection"
+    mitre_attack:
+      - T1059.001  # PowerShell Execution
+      - T1027  # Obfuscated Files or Information
+
+---
+
+SELECT event_time AND agent_uuid AND agent_name AND event_type AND process_name AND process_cmd AND process_user AND parent_process_name
+FROM data
+WHERE event_type = "PROCESS"
+AND process_name ILIKE "%powershell.exe%"
+AND (
+    process_cmd ILIKE "%IEX ("%"+"%"
+    OR process_cmd ILIKE "%Invoke-Expression ("%"+"%"
+    OR process_cmd ILIKE "%[System.Text.Encoding]::%"+"%"
+    OR process_cmd ILIKE "%[Convert]::%"+"%"
+    OR process_cmd ILIKE "%([char]%"+"%"
+)
+
+---
