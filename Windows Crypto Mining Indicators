@@ -1,0 +1,51 @@
+rule:
+  name: "Windows Crypto Mining Indicators"
+  description: "Detects potential crypto mining activities based on process execution and command-line patterns."
+  platform: "windows"
+  condition: "process_creation"
+  indicators:
+    - field: "ProcessImagePath"
+      contains:
+        - "\\xmrig.exe"
+        - "\\lolminer.exe"
+        - "\\nbminer.exe"
+        - "\\t-rex.exe"
+        - "\\ethminer.exe"
+        - "\\cgminer.exe"
+        - "\\minerd.exe"
+    - field: "ProcessCommandLine"
+      regex:
+        - "(?i).*--donate-level.*"
+        - "(?i).*--server.*"
+        - "(?i).*--url=.*"
+        - "(?i).*--algo=.*"
+        - "(?i).*stratum+tcp://.*"
+  response:
+    action: "alert"
+    severity: "high"
+    tags:
+      - "crypto-mining"
+      - "malware"
+      - "unauthorized-use"
+  metadata:
+    author: "Security Team"
+    created: "2025-02-25"
+    category: "Threat Detection"
+    mitre_attack:
+      - T1496  # Resource Hijacking
+      - T1495  # Cryptojacking
+
+---
+SELECT eventTime agentUuid agentName processName processCmd parentProcessName parentProcessCmd  
+FROM process_events  
+WHERE  
+    (LOWER(processName) IN ('xmrig.exe', 'lolminer.exe', 'nbminer.exe', 't-rex.exe', 'ethminer.exe', 'cgminer.exe', 'minerd.exe'))  
+    OR  
+    (processCmd ILIKE '%--donate-level%'  
+    OR processCmd ILIKE '%--server%'  
+    OR processCmd ILIKE '%--url=%'  
+    OR processCmd ILIKE '%--algo=%'  
+    OR processCmd ILIKE '%stratum+tcp://%')  
+ORDER BY eventTime DESC  
+
+---
