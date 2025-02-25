@@ -27,3 +27,15 @@ rule:
     mitre_attack:
       - T1028  # Windows Remote Management (WinRM)
       - T1047  # WMI Execution
+
+---
+SELECT eventTime agentUuid agentName processName processCmd parentProcessName parentProcessCmd  
+FROM process_events  
+WHERE  
+    (LOWER(processName) = 'wmic.exe' OR LOWER(processName) = 'powershell.exe')  
+    AND (  
+        processCmd ILIKE '%wmic /node:% process call create%'  
+        OR processCmd ILIKE '%powershell -command%Invoke-WmiMethod%'  
+    )  
+ORDER BY eventTime DESC  
+---
