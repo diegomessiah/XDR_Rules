@@ -1,0 +1,36 @@
+rule:
+  name: "WDigest Usage to Store ClearText Creds via Registry"
+  description: "Detects modifications to the WDigest registry key to enable storing credentials in cleartext, which can indicate credential theft activity."
+  platform: "windows"
+  condition: "registry_modification"
+  indicators:
+    - field: "RegistryPath"
+      contains: "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\SecurityProviders\\WDigest\\UseLogonCredential"
+    - field: "RegistryValue"
+      equals: "1"
+  response:
+    action: "alert"
+    severity: "high"
+    tags:
+      - "wdigest"
+      - "cleartext_credentials"
+      - "mimikatz"
+      - "credential_theft"
+  metadata:
+    author: "Security Team"
+    created: "2025-02-25"
+    category: "Threat Detection"
+    mitre_attack:
+      - T1003  # Credential Dumping
+      - T1552  # Unsecured Credentials
+
+---
+
+SELECT eventTime agentUuid agentName processName processCmd parentProcessName parentProcessCmd  
+FROM registry_events  
+WHERE  
+    registryPath ILIKE "HKEY_LOCAL_MACHINE\\SYSTEM\\CurrentControlSet\\Control\\SecurityProviders\\WDigest\\UseLogonCredential"  
+    AND registryValue = "1"  
+ORDER BY eventTime DESC  
+
+---
