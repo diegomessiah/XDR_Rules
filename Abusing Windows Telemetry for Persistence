@@ -1,0 +1,31 @@
+title: Abusing Windows Telemetry for Persistence
+id: 1234-abcdef-5678
+status: experimental
+description: Detects abuse of Windows Telemetry (CompatTelRunner.exe) to establish persistence.
+author: Security Team
+date: 2025-02-25
+references:
+  - https://attack.mitre.org/techniques/T1546/
+  - https://learn.microsoft.com/en-us/windows/deployment/upgrade/telemetry-windows
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    Image|endswith: '\CompatTelRunner.exe'
+    ParentImage|endswith:
+      - '\svchost.exe'
+      - '\schtasks.exe'
+  filter:
+    CommandLine|contains:
+      - '/run'
+      - '/m'
+      - 'C:\Windows\System32\CompatTelRunner.exe'
+  condition: selection and not filter
+level: high
+tags:
+  - attack.persistence
+  - attack.t1546
+falsepositives:
+  - Legitimate telemetry updates
+  - System maintenance tasks
