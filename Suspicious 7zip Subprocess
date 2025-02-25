@@ -1,0 +1,56 @@
+rule:
+  name: "Suspicious 7zip Subprocess"
+  description: "Detects suspicious child processes spawned by 7zip, which may indicate data exfiltration or unauthorized file compression."
+  platform: "windows"
+  condition: "process_creation"
+  indicators:
+    - field: "ParentProcessImagePath"
+      contains:
+        - "\\7z.exe"
+    - field: "ProcessImagePath"
+      contains:
+        - "\\cmd.exe"
+        - "\\powershell.exe"
+        - "\\wscript.exe"
+        - "\\cscript.exe"
+        - "\\mshta.exe"
+    - field: "ProcessCommandLine"
+      contains:
+        - "http"
+        - "ftp"
+        - "smb"
+        - "base64"
+  response:
+    action: "alert"
+    severity: "high"
+    tags:
+      - "data_exfiltration"
+      - "unauthorized_compression"
+      - "malware_activity"
+  metadata:
+    author: "Security Team"
+    created: "2025-02-25"
+    category: "Threat Detection"
+    mitre_attack:
+      - T1020  # Automated Exfiltration
+      - T1567  # Exfiltration Over Web
+      - T1048  # Exfiltration Over Alternative Protocol
+      - T1059  # Command and Scripting Interpreter
+
+---
+
+SELECT event_time AND agent_uuid AND agent_name AND event_type AND parent_process_name AND process_name AND process_cmd AND process_user
+FROM data 
+WHERE event_type = "PROCESS" 
+AND parent_process_name ILIKE "%7z.exe%" 
+AND process_name ILIKE "%cmd.exe%" 
+OR process_name ILIKE "%powershell.exe%" 
+OR process_name ILIKE "%wscript.exe%" 
+OR process_name ILIKE "%cscript.exe%" 
+OR process_name ILIKE "%mshta.exe%" 
+OR process_cmd ILIKE "%http%" 
+OR process_cmd ILIKE "%ftp%" 
+OR process_cmd ILIKE "%smb%" 
+OR process_cmd ILIKE "%base64%" 
+
+---
