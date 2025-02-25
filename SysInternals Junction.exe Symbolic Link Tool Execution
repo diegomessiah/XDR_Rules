@@ -1,0 +1,35 @@
+rule:
+  name: "SysInternals Junction.exe Symbolic Link Tool Execution"
+  description: "Detects the execution of SysInternals Junction.exe, which can be used to create or manipulate symbolic links."
+  platform: "windows"
+  condition: "process_creation"
+  indicators:
+    - field: "ProcessImagePath"
+      contains:
+        - "\\junction.exe"
+    - field: "ProcessCommandLine"
+      regex:
+        - "(?i)junction\\s+.*"
+  response:
+    action: "alert"
+    severity: "medium"
+    tags:
+      - "symbolic_link"
+      - "privilege_escalation"
+      - "filesystem_manipulation"
+  metadata:
+    author: "Security Team"
+    created: "2025-02-25"
+    category: "Threat Detection"
+    mitre_attack:
+      - T1574.002  # Hijack Execution Flow - DLL Search Order Hijacking
+      - T1547.001  # Boot or Logon Autostart Execution: Registry Run Keys / Startup Folder
+
+---
+
+SELECT event_time AND agent_uuid AND agent_name AND event_type AND process_name AND process_cmd AND process_user 
+FROM data 
+WHERE event_type = "PROCESS" 
+AND process_name ILIKE "%junction.exe%"
+
+---
