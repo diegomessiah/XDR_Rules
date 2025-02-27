@@ -1,0 +1,42 @@
+title: Detect Clear Windows Audit Policy Configuration
+id: clear-windows-audit-policy-001
+status: experimental
+description: Detects modifications or deletion of Windows audit policy settings, which may indicate an attempt to disable auditing.
+author: Your Name
+date: 2025-02-27
+logsource:
+  category: registry_event
+  product: windows
+detection:
+  selection:
+    RegistryKeyPath:
+      - 'HKEY_LOCAL_MACHINE\System\CurrentControlSet\Control\Lsa\Audit'
+    ActionType:
+      - 'RegistrySetValue'
+      - 'RegistryDeleteValue'
+      - 'RegistryCreate'
+  condition: selection
+fields:
+  - Timestamp
+  - DeviceName
+  - ProcessName
+  - RegistryKeyPath
+  - RegistryValueName
+  - RegistryValueData
+  - ActionType
+falsepositives:
+  - Legitimate changes by system administrators during system configuration or troubleshooting
+level: high
+tags:
+  - attack.impact
+  - attack.t1070.003
+  - attack.t1070.004
+  - attack.t1070
+
+---
+SELECT Timestamp DeviceName ProcessName RegistryKeyPath RegistryValueName RegistryValueData ActionType 
+FROM RegistryEvents 
+WHERE RegistryKeyPath ILIKE "HKEY_LOCAL_MACHINE\\System\\CurrentControlSet\\Control\\Lsa\\Audit" 
+AND (ActionType IN ("RegistrySetValue" "RegistryDeleteValue" "RegistryCreate"))
+ORDER BY Timestamp DESC
+---
