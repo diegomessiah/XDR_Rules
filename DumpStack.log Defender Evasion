@@ -1,0 +1,43 @@
+title: Detect DumpStack.log Usage for Defender Evasion
+id: dumpstack-defender-evasion-001
+status: experimental
+description: Detects the use of DumpStack.log as a technique to evade Microsoft Defender.
+author: Your Name
+date: 2025-02-27
+logsource:
+  category: file_event
+  product: windows
+detection:
+  selection:
+    FilePath: 
+      - '*DumpStack.log*'
+    ActionType:
+      - 'FileCreate'
+      - 'FileWrite'
+      - 'FileDelete'
+  condition: selection
+fields:
+  - Timestamp
+  - DeviceName
+  - ProcessName
+  - FilePath
+  - ActionType
+  - FileName
+  - Username
+  - InitiatingProcessName
+  - InitiatingProcessCommandLine
+falsepositives:
+  - Legitimate use in debugging scenarios
+level: high
+tags:
+  - attack.defense_evasion
+  - attack.t1562.001
+  - attack.t1036
+
+---
+SELECT Timestamp DeviceName ProcessName FilePath ActionType FileName Username InitiatingProcessName InitiatingProcessCommandLine 
+FROM ProcessFileEvents 
+WHERE FilePath ILIKE "%DumpStack.log%" 
+AND ActionType IN ("FileCreate" "FileWrite" "FileDelete") 
+ORDER BY Timestamp DESC
+---
